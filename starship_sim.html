@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starship · 发射与筷子回收模拟</title>
+<style>body{margin:0;background:#05070d;font-family:-apple-system,Segoe UI,Roboto,sans-serif;display:flex;justify-content:center;padding:16px;}#wrap{width:100%;max-width:720px;}</style>
+</head>
+<body>
+<div id="wrap">
+<div style="display:flex;flex-direction:column;gap:10px;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
+  <div style="position:relative;border-radius:14px;overflow:hidden;border:1px solid rgba(80,140,220,0.25);background:#05070d;">
+    <canvas id="ss-canvas" width="680" height="480" style="display:block;width:100%;height:auto;background:#05070d;"></canvas>
+    <div id="ss-phase" style="position:absolute;top:12px;left:14px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#7fd4ff;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 0 8px rgba(40,140,255,0.6);">待命 · STANDBY</div>
+    <div id="ss-clock" style="position:absolute;top:12px;right:14px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#dfeaf5;font-size:14px;letter-spacing:1px;">T- 00:10</div>
+    <div style="position:absolute;left:12px;bottom:12px;display:flex;gap:8px;font-family:ui-monospace,Menlo,Consolas,monospace;">
+      <div style="background:rgba(8,16,30,0.72);border:1px solid rgba(90,160,230,0.3);border-radius:8px;padding:7px 10px;min-width:74px;"><div style="color:#6f87a3;font-size:9px;letter-spacing:1px;">ALTITUDE</div><div id="ss-alt" style="color:#7fffb0;font-size:16px;">0.0<span style="font-size:9px;color:#6f87a3"> km</span></div></div>
+      <div style="background:rgba(8,16,30,0.72);border:1px solid rgba(90,160,230,0.3);border-radius:8px;padding:7px 10px;min-width:88px;"><div style="color:#6f87a3;font-size:9px;letter-spacing:1px;">VELOCITY</div><div id="ss-vel" style="color:#7fd4ff;font-size:16px;">0<span style="font-size:9px;color:#6f87a3"> km/h</span></div></div>
+      <div style="background:rgba(8,16,30,0.72);border:1px solid rgba(90,160,230,0.3);border-radius:8px;padding:7px 10px;min-width:62px;"><div style="color:#6f87a3;font-size:9px;letter-spacing:1px;">ENGINES</div><div id="ss-eng" style="color:#ffd47f;font-size:16px;">0<span style="font-size:9px;color:#6f87a3">/33</span></div></div>
+    </div>
+    <div style="position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;width:152px;font-family:ui-monospace,Menlo,Consolas,monospace;">
+      <div style="background:rgba(8,16,30,0.72);border:1px solid rgba(90,160,230,0.3);border-radius:8px;padding:6px 9px;"><div style="display:flex;justify-content:space-between;color:#6f87a3;font-size:9px;letter-spacing:1px;"><span>B · 超重型助推</span><span id="ss-f1t">100%</span></div><div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:4px;overflow:hidden;"><div id="ss-f1" style="height:100%;width:100%;background:linear-gradient(90deg,#1d9e75,#7fffb0);"></div></div></div>
+      <div style="background:rgba(8,16,30,0.72);border:1px solid rgba(90,160,230,0.3);border-radius:8px;padding:6px 9px;"><div style="display:flex;justify-content:space-between;color:#6f87a3;font-size:9px;letter-spacing:1px;"><span>S · 星舰飞船</span><span id="ss-f2t">100%</span></div><div style="height:5px;background:rgba(255,255,255,0.08);border-radius:3px;margin-top:4px;overflow:hidden;"><div id="ss-f2" style="height:100%;width:100%;background:linear-gradient(90deg,#185fa5,#7fd4ff);"></div></div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
+    <button id="ss-launch" style="background:#d83a30;color:#fff;border:none;border-radius:9px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1px;box-shadow:0 0 18px rgba(216,58,48,0.45);">点火发射</button>
+    <button id="ss-reset" style="background:transparent;color:#9fb4cc;border:1px solid rgba(120,160,210,0.4);border-radius:9px;padding:10px 16px;font-size:13px;cursor:pointer;">复位</button>
+    <div style="display:flex;align-items:center;gap:6px;color:#8aa0bb;font-size:12px;font-family:ui-monospace,monospace;margin-left:4px;">镜头<button id="ss-cam" style="background:rgba(20,40,70,0.6);color:#7fd4ff;border:1px solid rgba(90,160,230,0.4);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;">跟随助推器</button></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;color:#8aa0bb;font-size:12px;font-family:ui-monospace,monospace;">速度 <input id="ss-speed" type="range" min="0.5" max="3" step="0.5" value="1" style="width:96px;"> <span id="ss-speedv" style="color:#dfeaf5;">1.0x</span></div>
+  </div>
+</div>
+<script>
+(function(){
+  const cv=document.getElementById('ss-canvas'), ctx=cv.getContext('2d');
+  const W=680,H=480, el=id=>document.getElementById(id);
+  let speed=1, camTgt='booster'; const G=9.8;
+  let S;
+  function reset(){
+    S={ t:0, phase:'standby', flagQ:false, sep:false,
+      alt:0, vy:0, dr:0, vx:0, ang:0, tAng:0, fins:0, thr:0, f1:100, eng:0, trail:[],
+      ship:{active:false, alt:0, vy:0, dr:0, vx:0, ang:0, tAng:0, thr:0, f2:100, trail:[]},
+      arm:0, caught:false, apex:0, ignT:0 };
+    el('ss-launch').disabled=false; el('ss-launch').textContent='点火发射'; el('ss-launch').style.opacity=1;
+  }
+  function launch(){ if(S.phase!=='standby')return; S.phase='ignition'; S.t=0; S.ignT=0;
+    el('ss-launch').disabled=true; el('ss-launch').style.opacity=0.45; el('ss-launch').textContent='飞行中…'; }
+  el('ss-launch').onclick=launch;
+  el('ss-reset').onclick=()=>reset();
+  el('ss-cam').onclick=()=>{ camTgt=(camTgt==='booster')?'ship':'booster'; el('ss-cam').textContent=camTgt==='booster'?'跟随助推器':'跟随飞船'; };
+  el('ss-speed').oninput=e=>{ speed=parseFloat(e.target.value); el('ss-speedv').textContent=speed.toFixed(1)+'x'; };
+
+  const CATCH=70; // booster hover altitude (world m) when caught by arms
+
+  function step(dt){
+    const p=S.phase; if(p==='standby'||p==='landed')return; S.t+=dt;
+    if(p==='ignition'){ S.ignT+=dt; S.thr=Math.min(1,S.ignT/1.4); S.eng=Math.round(S.thr*33); S.alt=0; S.vy=0; if(S.ignT>=1.4)S.phase='ascent'; }
+    else if(p==='ascent'){ S.thr=1; S.eng=33; S.f1-=dt*3.6; S.tAng=Math.min(22,S.alt/42);
+      const A=23; S.vy+=(A-G)*dt; S.vx+=A*Math.sin(S.ang*Math.PI/180)*dt;
+      if(S.vy>175||S.f1<42){ S.phase='hotstage'; S.t2=0; } }
+    else if(p==='hotstage'){ // hot-staging: ship lights while booster throttles down
+      S.t2=(S.t2||0)+dt; S.eng=3; S.thr=0.18; S.vy+=-G*dt; S.fins=Math.min(1,S.t2/0.8);
+      if(!S.ship.active){ S.ship.active=true; S.ship.alt=S.alt+5; S.ship.vy=S.vy; S.ship.dr=S.dr; S.ship.vx=S.vx; }
+      if(S.t2>=0.8){ S.sep=true; S.phase='boostback'; S.t3=0; } }
+    else if(p==='boostback'){ S.t3=(S.t3||0)+dt; S.fins=1; S.tAng=148; S.thr=(S.t3<2.4)?0.55:0; S.eng=(S.t3<2.4)?13:0;
+      S.f1-=(S.t3<2.4?dt*2.8:0); S.vy+=-G*dt; const need=0-S.dr; if(S.t3<2.8){ S.vx+=(need>0?9:-9)*dt; }
+      if(S.t3>=2.8){ S.phase='coast'; S.tAng=180; } }
+    else if(p==='coast'){ S.fins=1; S.thr=0; S.eng=0; S.tAng=180; S.vy+=-G*dt;
+      S.vx+=(0-S.dr>0?1:-1)*Math.min(Math.abs(S.dr),300)*0.003*dt;
+      if(S.vy<0&&S.alt<S.apex*0.5&&S.alt>0){ S.phase='reentry'; S.t4=0; } }
+    else if(p==='reentry'){ S.t4=(S.t4||0)+dt; S.tAng=180; S.thr=(S.t4<1.4)?0.7:0; S.eng=(S.t4<1.4)?13:0;
+      S.f1-=(S.t4<1.4?dt*2.0:0); S.vy+=(-G+(S.t4<1.4?28:0))*dt; if(S.t4>=1.4)S.phase='descent'; }
+    else if(p==='descent'){ S.tAng=180; S.thr=0; S.eng=0; S.fins=1; S.vy+=-G*dt;
+      const net=40-G, stop=(S.vy*S.vy)/(2*net); if((S.alt-CATCH)<=stop*1.05)S.phase='landingburn'; }
+    else if(p==='landingburn'){ S.tAng=180; S.eng=3; const net=40-G; const h=Math.max(S.alt-CATCH,0.5);
+      let need=Math.min((S.vy*S.vy)/(2*h),net); S.thr=Math.min(1,(need+G)/40); S.f1-=dt*3.0;
+      S.vy+=need*dt; if(S.vy>0)S.vy=0; S.vx+=(0-S.dr)*0.06*dt-S.vx*0.9*dt;
+      if(S.alt<=CATCH+0.8&&S.vy>-3){ S.alt=CATCH; S.vy=0; S.phase='catch'; S.t5=0; } }
+    else if(p==='catch'){ S.t5=(S.t5||0)+dt; S.alt=CATCH; S.vy=0; S.thr=Math.max(0,0.5-S.t5);
+      S.eng=S.thr>0.05?3:0; S.arm=Math.min(1,S.t5/1.3);
+      if(S.arm>=1){ S.caught=true; S.phase='landed'; } }
+
+    if(p!=='ignition'){ S.alt=Math.max(0,S.alt+S.vy*dt); S.dr+=S.vx*dt; }
+    S.apex=Math.max(S.apex,S.alt);
+    S.ang+=(S.tAng-S.ang)*Math.min(1,dt*3);
+    if(!S.flagQ&&S.alt>180&&p==='ascent')S.flagQ=true;
+    if(S.t%0.05<dt){ S.trail.push([S.dr,S.alt]); if(S.trail.length>500)S.trail.shift(); }
+
+    const sh=S.ship;
+    if(sh.active&&p!=='landed'){ sh.thr=Math.min(1,(S.t-((S.t2!==undefined)?0:0)));
+      sh.tAng=Math.min(35,sh.alt/60);
+      if(sh.f2>0){ const A2=18; sh.vy+=(A2-G)*dt; sh.f2-=dt*1.1; sh.vx+=A2*Math.sin(sh.ang*Math.PI/180)*dt; }
+      else { sh.thr=0; sh.vy+=-G*0.15*dt; }
+      sh.ang+=(sh.tAng-sh.ang)*Math.min(1,dt*2);
+      sh.alt=Math.max(0,sh.alt+sh.vy*dt); sh.dr+=sh.vx*dt;
+      if(S.t%0.05<dt){ sh.trail.push([sh.dr,sh.alt]); if(sh.trail.length>500)sh.trail.shift(); } }
+  }
+
+  let cam={cy:0,cx:0,ppm:1};
+  function updateCam(){ const e=(camTgt==='ship'&&S.ship.active)?S.ship:S;
+    const vh=Math.min(70000,Math.max(300,e.alt*0.62+300)); cam.ppm=(H*0.5)/vh; cam.cy=e.alt; cam.cx=e.dr; }
+  const sx=wx=>W*0.5+(wx-cam.cx)*cam.ppm, sy=wy=>H*0.5-(wy-cam.cy)*cam.ppm;
+
+  const stars=[]; for(let i=0;i<150;i++)stars.push([(Math.random()-0.5)*200000,Math.random()*150000,Math.random()*1.4+0.3]);
+  const clouds=[]; for(let i=0;i<10;i++)clouds.push([(Math.random()-0.5)*9000,250+Math.random()*1000,240+Math.random()*200]);
+  function skyTop(a){const k=Math.min(1,a/2600),c=(x,y)=>Math.round(x+(y-x)*k);return`rgb(${c(38,2)},${c(116,4)},${c(196,12)})`;}
+  function skyBot(a){const k=Math.min(1,a/2600),c=(x,y)=>Math.round(x+(y-x)*k);return`rgb(${c(150,5)},${c(192,8)},${c(232,20)})`;}
+
+  function flame(c,w,len,it,col){ if(it<=0.02)return; const L=len*(0.7+0.6*it)*(0.85+0.15*Math.sin(S.t*45));
+    const g=c.createLinearGradient(0,0,0,L); g.addColorStop(0,'rgba(190,225,255,0.95)'); g.addColorStop(0.35,col||'rgba(120,180,255,0.85)'); g.addColorStop(1,'rgba(255,140,40,0)');
+    c.fillStyle=g; c.beginPath(); c.moveTo(-w*0.5,0); c.lineTo(w*0.5,0); c.lineTo(w*0.16,L*0.55); c.lineTo(0,L); c.lineTo(-w*0.16,L*0.55); c.closePath(); c.fill(); }
+  function engineCluster(c,baseW,ph,thr,n){ if(thr<=0.02)return; const k=Math.min(n,11), gap=baseW*0.82/Math.max(k,1);
+    for(let i=0;i<k;i++){ const x=-baseW*0.41+gap*i+gap*0.5; c.save(); c.translate(x,0); flame(c,gap*0.9,ph*1.4,thr); c.restore(); } }
+
+  function steelBody(c,x,y,w,h){ const g=c.createLinearGradient(x,0,x+w,0);
+    g.addColorStop(0,'#7d8590'); g.addColorStop(0.35,'#cfd6dd'); g.addColorStop(0.55,'#eef1f4'); g.addColorStop(1,'#9aa2ab');
+    c.fillStyle=g; c.fillRect(x,y,w,h); }
+
+  function drawBooster(bx,by,ang,thr,fins,eng){ const ph=Math.max(40,Math.min(160,72*cam.ppm)),pw=ph*0.155;
+    ctx.save(); ctx.translate(bx,by); ctx.rotate(ang*Math.PI/180); const top=-ph/2,bot=ph/2;
+    ctx.save(); ctx.translate(0,bot); engineCluster(ctx,pw,ph,thr,eng); ctx.restore();
+    steelBody(ctx,-pw/2,top,pw,ph);
+    ctx.fillStyle='#22262b'; ctx.fillRect(-pw/2,bot-ph*0.05,pw,ph*0.05); // engine skirt
+    // hot-stage ring (vented top) — only after separation
+    if(S.sep){ ctx.fillStyle='#3a3f47'; ctx.fillRect(-pw/2,top,pw,ph*0.07);
+      ctx.strokeStyle='#15171b'; ctx.lineWidth=0.8; for(let i=0;i<7;i++){const xx=-pw/2+pw*(i+0.5)/7; ctx.beginPath(); ctx.moveTo(xx,top); ctx.lineTo(xx,top+ph*0.07); ctx.stroke();} }
+    // grid fins (near top) + catch pins
+    if(fins>0){ ctx.fillStyle='#8b939c'; const fw=pw*0.6*fins,fh=ph*0.07;
+      ctx.fillRect(-pw/2-fw,top+ph*0.10,fw,fh); ctx.fillRect(pw/2,top+ph*0.10,fw,fh);
+      ctx.fillStyle='#5a626b'; ctx.fillRect(-pw/2-2,top+ph*0.085,4,ph*0.02); ctx.fillRect(pw/2-2,top+ph*0.085,4,ph*0.02); } // catch pins
+    ctx.strokeStyle='rgba(0,0,0,0.10)'; ctx.lineWidth=0.5;
+    for(let i=1;i<5;i++){const yy=top+ph*i/5; ctx.beginPath(); ctx.moveTo(-pw/2,yy); ctx.lineTo(pw/2,yy); ctx.stroke();}
+    ctx.restore();
+    return {ph,pw,top:by-ph/2}; }
+
+  function drawShip(bx,by,ang,thr,front){ const ph=Math.max(28,Math.min(120,50*cam.ppm)),pw=ph*0.2;
+    ctx.save(); ctx.translate(bx,by); ctx.rotate(ang*Math.PI/180); const top=-ph/2,bot=ph/2;
+    ctx.save(); ctx.translate(0,bot); engineCluster(ctx,pw*0.9,ph,thr,6); ctx.restore();
+    // body with nose cone
+    steelBody(ctx,-pw/2,top+ph*0.18,pw,ph*0.82);
+    ctx.fillStyle='#cfd6dd'; ctx.beginPath(); ctx.moveTo(-pw/2,top+ph*0.18); ctx.lineTo(pw/2,top+ph*0.18); ctx.lineTo(pw*0.36,top-ph*0.02); ctx.quadraticCurveTo(0,top-ph*0.16,-pw*0.36,top-ph*0.02); ctx.closePath(); ctx.fill();
+    // heat-shield tiles (windward, left side dark)
+    ctx.fillStyle='rgba(20,22,26,0.78)'; ctx.fillRect(-pw/2,top+ph*0.2,pw*0.32,ph*0.78);
+    // flaps: forward (top) + aft (bottom)
+    ctx.fillStyle='#7d8590';
+    ctx.fillRect(-pw/2-pw*0.32,top+ph*0.22,pw*0.32,ph*0.12); ctx.fillRect(pw/2,top+ph*0.22,pw*0.30,ph*0.10);
+    ctx.fillRect(-pw/2-pw*0.4,bot-ph*0.22,pw*0.4,ph*0.16); ctx.fillRect(pw/2,bot-ph*0.22,pw*0.38,ph*0.14);
+    ctx.restore(); }
+
+  // Mechazilla launch/catch tower with chopstick arms
+  function drawTower(bx,by,ph,pw,armClose){
+    const gy=Math.min(sy(0),H+60), tx=bx-Math.max(70,pw*4.2);
+    const armY=by-ph*0.30;                 // catch-pin height
+    const topY=Math.min(armY-70, gy-40);
+    ctx.save();
+    // lattice mast
+    ctx.strokeStyle='#454b54'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(tx-9,gy); ctx.lineTo(tx-9,topY); ctx.moveTo(tx+9,gy); ctx.lineTo(tx+9,topY); ctx.stroke();
+    ctx.lineWidth=1.2; ctx.strokeStyle='#363b43';
+    for(let y=gy;y>topY;y-=16){ ctx.beginPath(); ctx.moveTo(tx-9,y); ctx.lineTo(tx+9,y-16); ctx.moveTo(tx+9,y); ctx.lineTo(tx-9,y-16); ctx.stroke(); }
+    ctx.strokeStyle='#2a2e35'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(tx+9,topY-22); ctx.lineTo(tx+9,topY); ctx.stroke(); // top spire
+    // chopstick arms — swing/extend from mast toward booster
+    const reach=(bx+pw*0.55)-(tx+9), tip=tx+9+reach*(0.32+0.68*armClose);
+    ctx.strokeStyle='#5a626b'; ctx.lineWidth=Math.max(6,pw*0.5); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(tx+9,armY-pw*0.42); ctx.lineTo(tip,armY-pw*0.42); ctx.stroke(); // upper rail
+    ctx.beginPath(); ctx.moveTo(tx+9,armY+pw*0.42); ctx.lineTo(tip,armY+pw*0.42); ctx.stroke(); // lower rail (cradle)
+    // arm tips / cups
+    ctx.fillStyle='#3a3f47'; ctx.fillRect(tip-4,armY-pw*0.6,6,pw*1.2);
+    ctx.restore();
+  }
+
+  function drawTrail(tr,col){ if(tr.length<2)return; ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath();
+    let st=false; for(const p of tr){const x=sx(p[0]),y=sy(p[1]); if(!st){ctx.moveTo(x,y);st=true;}else ctx.lineTo(x,y);} ctx.stroke(); ctx.restore(); }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,skyTop(cam.cy)); g.addColorStop(1,skyBot(cam.cy)); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    const sa=Math.min(1,cam.cy/1500);
+    if(sa>0.02){ ctx.save(); for(const st of stars){const x=sx(st[0]),y=sy(st[1]); if(x<-5||x>W+5||y<-5||y>H+5)continue;
+      ctx.globalAlpha=sa*(0.5+0.5*Math.sin((st[1]+S.t*40)*0.01)); ctx.fillStyle='#fff'; ctx.fillRect(x,y,st[2],st[2]);} ctx.restore(); }
+    ctx.save(); for(const cl of clouds){const x=sx(cl[0]),y=sy(cl[1]),r=cl[2]*cam.ppm; if(r<1||y<-r||y>H+r)continue;
+      ctx.globalAlpha=0.5*(1-Math.min(1,cam.cy/2800)); ctx.fillStyle='#eef4fb'; ctx.beginPath(); ctx.ellipse(x,y,r,r*0.34,0,0,7); ctx.fill();} ctx.restore();
+    const gy=sy(0);
+    if(gy<H+60){ ctx.fillStyle='#1a241a'; ctx.fillRect(0,gy,W,H-gy+1);
+      ctx.fillStyle='#3a3f47'; const px=sx(0); ctx.fillRect(px-34,gy,68,9); } // launch mount
+    drawTrail(S.ship.trail,'rgba(127,212,255,0.5)'); drawTrail(S.trail,'rgba(255,170,90,0.55)');
+
+    const showTower=['ignition','ascent','descent','landingburn','catch','landed'].includes(S.phase);
+    // draw order: tower arms behind booster during launch, in front during catch
+    let bgeo=null;
+    if(!S.sep){ // stacked: booster + ship together
+      const bx=sx(S.dr),by=sy(S.alt); bgeo=drawBooster(bx,by,S.ang,S.thr,S.fins,S.eng);
+      drawShip(bx, bgeo.top - Math.max(28,Math.min(120,50*cam.ppm))*0.5 + 2, S.ang, 0, true);
+      if(showTower&&gy<H+60) drawTower(bx,by,bgeo.ph,bgeo.pw,0);
+    } else {
+      if(S.ship.active){ const x=sx(S.ship.dr),y=sy(S.ship.alt); if(y>-260&&y<H+260) drawShip(x,y,S.ship.ang,S.ship.thr,true); }
+      const bx=sx(S.dr),by=sy(S.alt); bgeo=drawBooster(bx,by,S.ang,S.thr,S.fins,S.eng);
+      if(showTower&&gy<H+200) drawTower(bx,by,bgeo.ph,bgeo.pw,S.arm);
+    }
+    updateHUD();
+  }
+
+  const names={standby:'待命 · STANDBY',ignition:'点火 · IGNITION',ascent:'上升 · ASCENT',hotstage:'热分离 · HOT-STAGING',
+    boostback:'返场点火 · BOOSTBACK',coast:'滑行 · COAST',reentry:'再入点火 · RE-ENTRY',descent:'下降 · DESCENT',
+    landingburn:'着陆点火 · LANDING BURN',catch:'机械臂捕获 · CATCH',landed:'已被筷子夹住 · CAUGHT'};
+  function fmtClock(){ if(S.phase==='standby')return'T- 00:10'; const mt=S.t*7,m=Math.floor(mt/60),s=Math.floor(mt%60);
+    return'T+ '+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+  function updateHUD(){
+    let lab=names[S.phase]||S.phase; if(S.flagQ&&S.phase==='ascent'&&S.alt<440)lab='最大动压 · MAX-Q';
+    el('ss-phase').textContent=lab; el('ss-phase').style.color=S.phase==='landed'?'#7fffb0':'#7fd4ff';
+    el('ss-clock').textContent=fmtClock();
+    const e=(camTgt==='ship'&&S.ship.active)?S.ship:S;
+    el('ss-alt').innerHTML=(e.alt/1000*70).toFixed(1)+'<span style="font-size:9px;color:#6f87a3"> km</span>';
+    el('ss-vel').innerHTML=Math.round(Math.sqrt(e.vy*e.vy+(e.vx||0)*(e.vx||0))*52).toLocaleString()+'<span style="font-size:9px;color:#6f87a3"> km/h</span>';
+    el('ss-eng').innerHTML=(camTgt==='ship'?(S.ship.thr>0.05?6:0):S.eng)+'<span style="font-size:9px;color:#6f87a3">/'+(camTgt==='ship'?'6':'33')+'</span>';
+    const f1=Math.max(0,S.f1),f2=Math.max(0,S.ship.f2);
+    el('ss-f1').style.width=f1+'%'; el('ss-f1t').textContent=Math.round(f1)+'%';
+    el('ss-f2').style.width=f2+'%'; el('ss-f2t').textContent=Math.round(f2)+'%';
+  }
+
+  let last=performance.now();
+  function frame(now){ let dt=(now-last)/1000; last=now; if(dt>0.05)dt=0.05; const sdt=dt*speed;
+    for(let i=0;i<3;i++)step(sdt/3); updateCam(); draw(); requestAnimationFrame(frame); }
+  reset(); updateCam(); requestAnimationFrame(frame);
+})();
+</script>
+</div>
+</body>
+</html>
