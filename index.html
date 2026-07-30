@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>火箭模型 · SpaceX 仿真合集</title>
+<style>
+  :root{color-scheme:dark}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 120%,#1a2340 0%,#05070f 70%);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#e8ecf5;
+  }
+  .wrap{max-width:720px;padding:48px 24px;text-align:center}
+  h1{font-size:28px;letter-spacing:.06em;margin-bottom:10px}
+  p.sub{color:#8b93a8;font-size:14px;margin-bottom:36px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  a.card{
+    display:block;padding:26px 18px;border:1px solid #2a3452;border-radius:16px;
+    background:rgba(255,255,255,.03);text-decoration:none;color:inherit;
+    transition:transform .25s,border-color .25s,background .25s;
+  }
+  a.card:hover{transform:translateY(-4px);border-color:#5a7bd8;background:rgba(90,123,216,.08)}
+  .card .ic{font-size:30px;display:block;margin-bottom:12px}
+  .card b{font-size:15.5px;display:block;margin-bottom:6px}
+  .card span{font-size:12px;color:#8b93a8;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🚀 火箭模型</h1>
+  <p class="sub">SpaceX 火箭的三个交互仿真 · 纯前端实现</p>
+  <div class="cards">
+    <a class="card" href="falcon9_sim.html"><span class="ic">🛰️</span><b>Falcon 9 发射仿真</b><span>发射、级间分离与一级回收着陆的全流程模拟</span></a>
+    <a class="card" href="starship_3d.html"><span class="ic">🚀</span><b>Starship 3D 模型</b><span>星舰的三维交互模型，可旋转缩放查看结构</span></a>
+    <a class="card" href="starship_sim.html"><span class="ic">🔥</span><b>Starship 飞行仿真</b><span>星舰发射与筷子回收的动力学模拟</span></a>
+  </div>
+</div>
+</body>
+</html>
