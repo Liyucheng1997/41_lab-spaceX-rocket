@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>火箭发射仿真实验室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body class="prelaunch">
+<canvas id="gl"></canvas>
+
+<!-- 顶部：任务信息与时钟 -->
+<header id="top">
+  <div class="brand">
+    <div class="logo">ROCKET<span>LAB</span></div>
+    <div class="sub">火箭发射仿真实验室</div>
+  </div>
+  <div class="clock-wrap">
+    <div id="clock">T− 00:00:25</div>
+    <div id="phase">待命</div>
+  </div>
+  <div class="pickers">
+    <label>型号<select id="selVeh"></select></label>
+    <label>任务<select id="selMis"></select></label>
+  </div>
+</header>
+
+<!-- 左侧：遥测 -->
+<aside id="tele" class="glass">
+  <div class="tele-head">
+    <div id="teleName">—</div>
+    <div id="teleStatus" class="pill">待命</div>
+  </div>
+  <div class="grid" id="teleGrid"></div>
+  <div class="sub-h">发动机</div>
+  <svg id="engSvg" viewBox="-60 -60 120 120"></svg>
+  <div class="sub-h">推进剂</div>
+  <div id="propBars"></div>
+</aside>
+
+<!-- 右侧：飞行事件 -->
+<aside id="events" class="glass">
+  <div class="panel-h">飞行事件 <span class="hint">仿真 / 真实参考</span></div>
+  <ol id="evList"></ol>
+</aside>
+
+<!-- 左下：图表 -->
+<section id="charts" class="glass">
+  <div class="chart-tabs"><button data-c="alt" class="on">高度</button><button data-c="vel">速度</button><button data-c="q">动压</button><button data-c="g">过载</button><button data-c="traj">弹道剖面</button></div>
+  <canvas id="chart" width="560" height="220"></canvas>
+</section>
+
+<!-- 底部：控制 -->
+<footer id="ctl" class="glass">
+  <div class="row">
+    <button id="btnGo" class="primary">▶ 开始倒计时</button>
+    <button id="btnNext" title="快进到下一飞行事件（N）">⏭ 下一事件</button>
+    <button id="btnReset" title="复位（R）">↺ 复位</button>
+    <div class="seg" id="speedSeg"></div>
+  </div>
+  <div class="row">
+    <div class="seg" id="camSeg"></div>
+    <div class="seg" id="tgtSeg"></div>
+    <label class="tod">光照<select id="selTod">
+      <option value="dawn">黎明（晨昏"水母"效应）</option>
+      <option value="morning" selected>上午</option>
+      <option value="noon">正午</option>
+      <option value="sunset">黄昏</option>
+      <option value="night">夜间</option>
+    </select></label>
+    <span id="keys">空格 开始/暂停 · 1–5 切换镜头 · T 切换目标 · N 下一事件 · H 隐藏界面</span>
+  </div>
+</footer>
+
+<div id="specs" class="glass"></div>
+<div id="credit"></div>
+<div id="toast"></div>
+<div id="loading"><div class="spinner"></div><div id="loadText">正在加载…</div></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

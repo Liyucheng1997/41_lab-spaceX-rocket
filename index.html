@@ -25,12 +25,24 @@
   .card .ic{font-size:30px;display:block;margin-bottom:12px}
   .card b{font-size:15.5px;display:block;margin-bottom:6px}
   .card span{font-size:12px;color:#8b93a8;line-height:1.7}
+  a.hero{display:block;margin-bottom:22px;padding:28px 26px;border-radius:18px;text-decoration:none;color:inherit;text-align:left;
+    border:1px solid rgba(95,184,255,.45);background:linear-gradient(135deg,rgba(40,90,170,.35),rgba(10,16,30,.6));transition:transform .25s,border-color .25s}
+  a.hero:hover{transform:translateY(-3px);border-color:#8fd0ff}
+  a.hero b{font-size:19px;display:block;margin-bottom:8px}
+  a.hero span{font-size:13px;color:#a9b6cc;line-height:1.8;display:block}
+  a.hero i{font-style:normal;display:inline-block;margin-top:10px;color:#8fd0ff;font-size:13px}
+  .old{color:#8b93a8;font-size:12.5px;margin:6px 0 12px;text-align:left}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🚀 火箭模型</h1>
-  <p class="sub">SpaceX 火箭的三个交互仿真 · 纯前端实现</p>
+  <p class="sub">多型号运载火箭的三维发射与回收仿真 · 纯前端实现</p>
+  <a class="hero" href="lab/"><b>🌍 火箭发射仿真实验室（v1.1）</b>
+    <span>猎鹰 9 号 · 猎鹰重型 · 星舰/超重型 · 土星五号 · 长征五号乙<br>
+    真实尺寸建模 · 标准大气与推力随高度变化的物理仿真 · 闭环入轨与助推器回收制导 · 真实卫星影像发射场 · 体积尾焰 · 大气散射 · 五种镜头</span>
+    <i>进入实验室 →</i></a>
+  <p class="old">早期版本</p>
   <div class="cards">
     <a class="card" href="falcon9_sim.html"><span class="ic">🛰️</span><b>Falcon 9 发射仿真</b><span>发射、级间分离与一级回收着陆的全流程模拟</span></a>
     <a class="card" href="starship_3d.html"><span class="ic">🚀</span><b>Starship 3D 模型</b><span>星舰的三维交互模型，可旋转缩放查看结构</span></a>
